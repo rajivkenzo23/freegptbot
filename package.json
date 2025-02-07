@@ -4,13 +4,19 @@
   "description": "A WhatsApp bot with AI, weather, and news features.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "pm2": "pm2 start index.js --name whatsapp-bot"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^3.0.0",
-    "axios": "^1.0.0",
-    "dotenv": "^10.0.0",
-    "xml2js": "^0.4.23"
+    "@whiskeysockets/baileys": "^7.0.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.0.0",
+    "xml2js": "^0.4.23",
+    "pm2": "^5.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
   },
   "author": "Bot Owner",
   "license": "MIT"

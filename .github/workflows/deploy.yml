@@ -1,0 +1,38 @@
+name: Deploy WhatsApp Bot
+
+on:
+  push:
+    branches:
+      - main  # Change this if your default branch is different
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run WhatsApp Bot
+        env:
+          PREFIX: "."  # You can define these in GitHub Secrets for security
+          BOT_NAME: "WhatsApp Bot"
+          OWNER_NAME: "Bot Owner"
+          CONTACT_INFO: "+94752799279"
+        run: pm2 start index.js --name whatsapp-bot
+
+      - name: Keep process running
+        run: pm2 logs

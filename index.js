@@ -2,6 +2,7 @@ const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysocket
 const axios = require("axios");
 const dotenv = require("dotenv");
 const { parseString } = require("xml2js"); // For news parsing
+const fs = require("fs");
 
 // Load environment variables from .env file
 dotenv.config();
@@ -10,6 +11,11 @@ const PREFIX = process.env.PREFIX || ".";
 const BOT_NAME = process.env.BOT_NAME || "WhatsApp Bot";
 const OWNER_NAME = process.env.OWNER_NAME || "Bot Owner";
 const CONTACT_INFO = process.env.CONTACT_INFO || "Not Provided";
+
+// Ensure authentication folder exists
+if (!fs.existsSync("auth_info")) {
+    fs.mkdirSync("auth_info");
+}
 
 // Delay function
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -29,6 +35,12 @@ async function getAIResponse(userInput) {
                 messages: [{ role: "user", content: userInput }],
                 model: "gpt-4"
             });
+
+            if (!response.data || !response.data.choices || response.data.choices.length === 0) {
+                console.warn(`Invalid response from API: ${api}`);
+                continue;
+            }
+
             return response.data.choices[0].message.content || "I didn't understand that.";
         } catch (error) {
             console.error(`GPT-4 Free API failed: ${api}, trying next...`);
@@ -53,14 +65,19 @@ async function getNews(query) {
         const feedUrl = `https://news.google.com/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`;
         const response = await axios.get(feedUrl);
         let newsOutput = "";
+
         parseString(response.data, (err, result) => {
-            if (!err) {
-                const articles = result.rss.channel[0].item;
-                articles.slice(0, 5).forEach(article => {
-                    newsOutput += `${article.title[0]} - ${article.link[0]}\n`;
-                });
+            if (err || !result.rss || !result.rss.channel || !result.rss.channel[0].item) {
+                newsOutput = "No news found for this topic.";
+                return;
             }
+
+            const articles = result.rss.channel[0].item.slice(0, 5);
+            articles.forEach(article => {
+                newsOutput += `${article.title[0]} - ${article.link[0]}\n`;
+            });
         });
+
         return newsOutput || "No news found.";
     } catch (error) {
         return "Sorry, I couldn't fetch the news. Please try again later.";
@@ -77,6 +94,7 @@ async function startBot() {
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
             console.log("Connection closed, reconnecting...", shouldReconnect);
             if (shouldReconnect) startBot();
+            else console.log("Session expired. Please reauthenticate.");
         } else if (connection === "open") {
             console.log(`${BOT_NAME} connected successfully!`);
         }
